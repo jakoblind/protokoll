@@ -362,6 +362,13 @@ export default function Home() {
         >
           @karljakoblind
         </a>
+        <a
+          href="https://github.com/jakoblind/protokoll"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Github
+        </a>
       </footer>
     </div>
   );
