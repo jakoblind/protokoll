@@ -22,7 +22,41 @@ export function getStyremedlemer(data) {
     .map((i) => data[i]);
 }
 
+function getExtraPunkter(data) {
+  const asArray = Object.entries(data);
+
+  const filtered = asArray.filter(([key, value]) =>
+    key.startsWith("ekstra_punkt")
+  );
+
+  const reduced = filtered.reduce((acc, value) => {
+    const maybeHeader = value[0].replaceAll("ekstra_punkt_header", "");
+    const maybeHeaderInt = parseInt(maybeHeader);
+    const maybeDescription = value[0].replaceAll(
+      "ekstra_punkt_description",
+      ""
+    );
+    const maybeDescriptionInt = parseInt(maybeDescription);
+
+    if (!Number.isNaN(maybeHeaderInt)) {
+      acc[maybeHeaderInt] = acc[maybeHeaderInt]
+        ? { ...acc[maybeHeaderInt], ekstra_punkt_header: value[1] }
+        : { ekstra_punkt_header: value[1] };
+    }
+
+    if (!Number.isNaN(maybeDescriptionInt)) {
+      acc[maybeDescriptionInt] = acc[maybeDescriptionInt]
+        ? { ...acc[maybeDescriptionInt], ekstra_punkt_description: value[1] }
+        : { ekstra_punkt_description: value[1] };
+    }
+
+    return acc;
+  }, []);
+  return reduced;
+}
+
 export function generateGeneralforsamlingsprotokoll(data) {
+  getExtraPunkter(data);
   const doc = new Document({
     sections: [
       {
@@ -237,6 +271,21 @@ export function generateGeneralforsamlingsprotokoll(data) {
                 text: `Styremedlemer: ${name}`,
               })
           ),
+          ...getExtraPunkter(data).flatMap((a, i) => [
+            new Paragraph({
+              heading: HeadingLevel.HEADING_2,
+              spacing: {
+                before: 200,
+              },
+              children: [new TextRun(`${7 + i}. ${a["ekstra_punkt_header"]}`)],
+            }),
+            new Paragraph({
+              spacing: {
+                before: 200,
+              },
+              children: [new TextRun(`${a["ekstra_punkt_description"]}`)],
+            }),
+          ]),
 
           new Paragraph({
             spacing: {

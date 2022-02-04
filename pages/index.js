@@ -31,8 +31,41 @@ function TextField({
   errors,
   autoFocus,
   type = "text",
+  asTextArea = false,
 }) {
   const error = errors ? errors[name] : null;
+  const inputField = (
+    <input
+      className={`${
+        error
+          ? "border-red-500 focus:border-red-500 "
+          : "border-gray-100 focus:border-blue-600"
+      } appearance-none border-2 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white `}
+      id={id || name}
+      name={name}
+      autoFocus={autoFocus}
+      type={type}
+      defaultValue={defaultValue}
+      placeholder={placeholder}
+      {...register(name, { required })}
+    />
+  );
+  const textArea = (
+    <textarea
+      className={`${
+        error
+          ? "border-red-500 focus:border-red-500 "
+          : "border-gray-100 focus:border-blue-600"
+      } appearance-none border-2 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white `}
+      id={id || name}
+      name={name}
+      autoFocus={autoFocus}
+      type={type}
+      defaultValue={defaultValue}
+      placeholder={placeholder}
+      {...register(name, { required })}
+    />
+  );
   return (
     <>
       <div className=" mb-6">
@@ -45,20 +78,7 @@ function TextField({
         </label>
         <div className="md:flex">
           <div className="md:w-1/2">
-            <input
-              className={`${
-                error
-                  ? "border-red-500 focus:border-red-500 "
-                  : "border-gray-100 focus:border-blue-600"
-              } appearance-none border-2 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white `}
-              id={id || name}
-              name={name}
-              autoFocus={autoFocus}
-              type={type}
-              defaultValue={defaultValue}
-              placeholder={placeholder}
-              {...register(name, { required })}
-            />
+            {asTextArea ? textArea : inputField}
             {error && (
               <p className="text-red-500 text-s italic">Obligatoriskt felt</p>
             )}
@@ -115,21 +135,31 @@ function Group({ children, header }) {
   );
 }
 
-function NInputs({ addText, register, errors, inputTextLabel, inputTextName }) {
+function NInputs({
+  addText,
+  register,
+  errors,
+  inputTextLabel,
+  inputTextName,
+  inputText2Label,
+  inputText2Name,
+}) {
   const [nInputs, addInput] = useState(0);
 
   const AddInputButton = () => (
-    <button
-      type="button"
-      className="text-blue-600 mb-6"
-      onClick={(e) => {
-        e.preventDefault();
+    <div>
+      <button
+        type="button"
+        className="text-blue-600 mb-6"
+        onClick={(e) => {
+          e.preventDefault();
 
-        addInput(nInputs + 1);
-      }}
-    >
-      {addText}
-    </button>
+          addInput(nInputs + 1);
+        }}
+      >
+        {addText}
+      </button>
+    </div>
   );
   if (nInputs === 0) {
     return <AddInputButton />;
@@ -137,15 +167,28 @@ function NInputs({ addText, register, errors, inputTextLabel, inputTextName }) {
     return (
       <>
         {[...Array(nInputs).keys()].map((n) => (
-          <TextField
-            register={register}
-            required={false}
-            label={`${inputTextLabel} ${n + 1}`}
-            name={`${inputTextName}${n + 1}`}
-            errors={errors}
-            autoFocus={true}
-            key={n}
-          />
+          <>
+            <TextField
+              register={register}
+              required={false}
+              label={`${inputTextLabel} ${n + 1}`}
+              name={`${inputTextName}${n + 1}`}
+              errors={errors}
+              autoFocus={true}
+              key={`${inputTextLabel}-${n}`}
+            />
+            {inputText2Label && inputText2Name ? (
+              <TextField
+                register={register}
+                required={false}
+                label={`${inputText2Label} ${n + 1}`}
+                name={`${inputText2Name}${n + 1}`}
+                errors={errors}
+                key={`${inputText2Label}-${n}`}
+                asTextArea={true}
+              />
+            ) : null}
+          </>
         ))}
         <AddInputButton />
       </>
@@ -295,6 +338,15 @@ function GeneralforsamlingForm() {
           errors={errors}
           inputTextLabel="Ny styremedlem"
           inputTextName="ny_styremedlem"
+        />
+        <NInputs
+          addText="Legg til ekstra punkt, feks vedtekter"
+          register={register}
+          errors={errors}
+          inputTextLabel="Punkt"
+          inputTextName="ekstra_punkt_header"
+          inputText2Label="Beskrivning"
+          inputText2Name="ekstra_punkt_description"
         />
 
         <TextField
