@@ -305,7 +305,7 @@ function GeneralforsamlingForm() {
           required={true}
           label="Gjelder for år"
           name="ar"
-          defaultValue="2022"
+          defaultValue="2021"
           errors={errors}
         />
         <TextField
