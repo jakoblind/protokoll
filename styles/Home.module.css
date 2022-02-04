@@ -4,6 +4,8 @@
 
 .main {
   min-height: 100vh;
+  max-width: 720px;
+  margin: 0 auto;
   padding: 4rem 0;
   flex: 1;
   display: flex;

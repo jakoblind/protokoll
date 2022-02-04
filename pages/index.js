@@ -1,69 +1,368 @@
-import Head from 'next/head'
-import Image from 'next/image'
-import styles from '../styles/Home.module.css'
+import React, { useState, useEffect } from "react";
+import Head from "next/head";
+import Image from "next/image";
+import styles from "../styles/Home.module.css";
 
+import { useForm, useWatch } from "react-hook-form";
+
+import { Document, Packer } from "docx";
+import { saveAs } from "file-saver";
+import { generateGeneralforsamlingsprotokoll } from "../utils/docx-generator";
+import forms from "@tailwindcss/forms";
+
+function getTodaysDate() {
+  var today = new Date();
+  var dd = String(today.getDate()).padStart(2, "0");
+  var mm = String(today.getMonth() + 1).padStart(2, "0"); //January is 0!
+  var yyyy = today.getFullYear();
+
+  today = yyyy + "-" + mm + "-" + dd;
+  return today;
+}
+
+function TextField({
+  label,
+  id,
+  name,
+  defaultValue,
+  placeholder,
+  register,
+  required,
+  errors,
+  autoFocus,
+  type = "text",
+}) {
+  const error = errors ? errors[name] : null;
+  return (
+    <>
+      <div className=" mb-6">
+        <label
+          className="block text-gray-100 font-bold mb-1 md:mb-0 pr-4"
+          htmlFor={id || name}
+        >
+          {label}
+          {required ? " *" : ""}
+        </label>
+        <div className="md:flex">
+          <div className="md:w-1/2">
+            <input
+              className={`${
+                error
+                  ? "border-red-500 focus:border-red-500 "
+                  : "border-gray-100 focus:border-blue-600"
+              } appearance-none border-2 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white `}
+              id={id || name}
+              name={name}
+              autoFocus={autoFocus}
+              type={type}
+              defaultValue={defaultValue}
+              placeholder={placeholder}
+              {...register(name, { required })}
+            />
+            {error && (
+              <p className="text-red-500 text-s italic">Obligatoriskt felt</p>
+            )}
+          </div>
+          <div className="md:w-1/2"></div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function RadioJaNei({ label, defaultValue, name, register }) {
+  return (
+    <div className="mb-6">
+      <span className="block text-gray-100 font-bold  mb-1 md:mb-0 pr-4">
+        {label}
+      </span>
+
+      <label className="inline-flex items-center">
+        <input
+          className="form-radio text-blue-600 h-5 w-5"
+          type="radio"
+          name={name}
+          value="ja"
+          defaultChecked={defaultValue === "ja"}
+          {...register(name)}
+        />
+        <span className="ml-2">Ja</span>
+      </label>
+      <label className="inline-flex items-center ml-6">
+        <input
+          className="form-radio text-blue-600 h-5 w-5"
+          type="radio"
+          name={name}
+          value="nei"
+          defaultChecked={defaultValue === "nei"}
+          {...register(name)}
+        />
+        <span className="ml-2">Nei</span>
+      </label>
+    </div>
+  );
+}
+
+function Group({ children, header }) {
+  return (
+    <>
+      {" "}
+      <h3>{header}</h3>
+      <hr className="pb-3" />
+      {children}
+      <div className="pb-10"></div>
+    </>
+  );
+}
+
+function NInputs({ addText, register, errors, inputTextLabel, inputTextName }) {
+  const [nInputs, addInput] = useState(0);
+
+  const AddInputButton = () => (
+    <button
+      type="button"
+      className="text-blue-600 mb-6"
+      onClick={(e) => {
+        e.preventDefault();
+
+        addInput(nInputs + 1);
+      }}
+    >
+      {addText}
+    </button>
+  );
+  if (nInputs === 0) {
+    return <AddInputButton />;
+  } else {
+    return (
+      <>
+        {[...Array(nInputs).keys()].map((n) => (
+          <TextField
+            register={register}
+            required={false}
+            label={`${inputTextLabel} ${n + 1}`}
+            name={`${inputTextName}${n + 1}`}
+            errors={errors}
+            autoFocus={true}
+            key={n}
+          />
+        ))}
+        <AddInputButton />
+      </>
+    );
+  }
+}
+
+function GeneralforsamlingForm() {
+  const { register, handleSubmit, formState, watch, setValue, control } =
+    useForm();
+  const { errors, touchedFields } = formState;
+  const onSubmit = (data) => {
+    console.log("submit", data);
+
+    const doc = generateGeneralforsamlingsprotokoll(data);
+
+    Packer.toBlob(doc).then((blob) => {
+      saveAs(
+        blob,
+        `Generalforsamlingsprotokoll-${data.foretaksnavn}-${data.ar}.docx`
+      );
+    });
+  };
+
+  const styreleder = useWatch({
+    control,
+    name: "styreleder",
+  });
+
+  useEffect(() => {
+    if (!formState.touchedFields.moteleder) {
+      setValue("moteleder", styreleder);
+    }
+    if (!formState.touchedFields.protokollforer) {
+      setValue("protokollforer", styreleder);
+    }
+    if (!formState.touchedFields.ny_styreleder) {
+      setValue("ny_styreleder", styreleder);
+    }
+  }, [styreleder, formState, setValue]);
+
+  return (
+    <form className="w-full max-w-m" onSubmit={handleSubmit(onSubmit)}>
+      <Group header="Foretaksinformasjon">
+        <TextField
+          label="Foretaksnavn"
+          name="foretaksnavn"
+          register={register}
+          required={true}
+          errors={errors}
+          autoFocus={true}
+        />
+
+        <TextField
+          register={register}
+          required={true}
+          errors={errors}
+          label="Styreleder"
+          name="styreleder"
+        />
+
+        <RadioJaNei
+          register={register}
+          name="revisor"
+          label="Revisor"
+          defaultValue="nei"
+          errors={errors}
+        />
+      </Group>
+      <Group header="Inkallning og møtedeltager">
+        <TextField
+          register={register}
+          required={true}
+          label="Dato for generalforsamling"
+          name="dato"
+          type="date"
+          defaultValue={getTodaysDate()}
+          errors={errors}
+        />
+
+        {/*<RadioJaNei
+          register={register}
+          name="godkjent_inkalling"
+          label="Inkalling og dagsorden godkjent"
+          defaultValue="ja"
+          errors={errors}
+        />*/}
+        <TextField
+          register={register}
+          required={true}
+          label="Protokollfører"
+          name="protokollforer"
+          errors={errors}
+        />
+        <TextField
+          register={register}
+          required={true}
+          label="Møteleder"
+          name="moteleder"
+          errors={errors}
+        />
+        <NInputs
+          addText="Legg til fler møtedeltagere"
+          register={register}
+          errors={errors}
+          inputTextLabel="Møtedeltager"
+          inputTextName="motedeltager"
+        />
+      </Group>
+
+      <Group header="Innhold og beslutninger">
+        <TextField
+          register={register}
+          required={true}
+          label="Gjelder for år"
+          name="ar"
+          defaultValue="2022"
+          errors={errors}
+        />
+        <TextField
+          register={register}
+          required={true}
+          label="Godtgjørelse styreleder per år (NOK)"
+          name="godtgjorelse_styreleder"
+          defaultValue="0"
+          errors={errors}
+        />
+        <TextField
+          register={register}
+          required={true}
+          label="Godtgjørelse styremedlemer per år (NOK)"
+          name="godtgjorelse_styrmedlem"
+          defaultValue="0"
+          errors={errors}
+        />
+
+        <TextField
+          register={register}
+          required={false}
+          label="Ny styreleder"
+          name="ny_styreleder"
+          errors={errors}
+        />
+        <NInputs
+          addText="Legg til nytt styremedlem"
+          register={register}
+          errors={errors}
+          inputTextLabel="Ny styremedlem"
+          inputTextName="ny_styremedlem"
+        />
+
+        <TextField
+          register={register}
+          required={true}
+          label="Generalforsamling ble avsluttet klokken"
+          name="tid_avsluttet"
+          defaultValue="12:00"
+          errors={errors}
+        />
+      </Group>
+      <p>
+        <i>
+          Dokumentet er et utkast som du kan gå gjennom. Jeg tar ikke noe ansvar
+          for eventuelle feil og mangler i dokumentet.
+        </i>
+      </p>
+
+      <div className="text-center md:items-center mb-6">
+        <button
+          className=" shadow bg-blue-700 hover:bg-blue-600 focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded"
+          type="submit"
+        >
+          Last ned DOCX med generalforsamlingsprotokoll
+        </button>
+      </div>
+    </form>
+  );
+}
 export default function Home() {
   return (
     <div className={styles.container}>
       <Head>
-        <title>Create Next App</title>
-        <meta name="description" content="Generated by create next app" />
+        <title>Generalforsamlingsprotokollgenerator</title>
+        <meta
+          name="description"
+          content="Generalforsamlingsprotokollgenerator"
+        />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+        <h1 className={styles.title}>Generalforsamlingsprotokollgenerator</h1>
 
         <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
+          Fyll ut informasjon om din generalforsamling, og få ut en docx med
+          protokoll. Ingen informasjon lagres på noen server, alt skjer i
+          nettleseren.
         </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h2>Documentation &rarr;</h2>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h2>Learn &rarr;</h2>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className={styles.card}
-          >
-            <h2>Examples &rarr;</h2>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h2>Deploy &rarr;</h2>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
+        <GeneralforsamlingForm />
       </main>
 
       <footer className={styles.footer}>
         <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
+          href="https://jakoblind.no"
           target="_blank"
           rel="noopener noreferrer"
         >
-          Powered by{' '}
-          <span className={styles.logo}>
-            <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-          </span>
+          Made by Jakob Lind
+        </a>{" "}
+        <a
+          href="https://twitter.com/karljakoblind"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          @karljakoblind
         </a>
       </footer>
     </div>
-  )
+  );
 }
