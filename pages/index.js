@@ -197,9 +197,8 @@ function NInputs({
 }
 
 function GeneralforsamlingForm() {
-  const { register, handleSubmit, formState, watch, setValue, control } =
-    useForm();
-  const { errors, touchedFields } = formState;
+  const { register, handleSubmit, formState, setValue, control } = useForm();
+  const { errors } = formState;
   const onSubmit = (data) => {
     console.log("submit", data);
 
