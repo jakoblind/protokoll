@@ -8,9 +8,16 @@ import { generateGeneralforsamlingsprotokoll } from "../utils/docx-generator";
 import { getStructuredData } from "../utils/data-transformer";
 
 export function GeneralforsamlingForm() {
-  const { register, handleSubmit, formState, setValue, control, getValues } =
-    useForm();
-  const { errors } = formState;
+  const {
+    register,
+    handleSubmit,
+    formState,
+    setValue,
+    control,
+    getValues,
+    watch,
+  } = useForm();
+  const { errors, touchedFields } = formState;
   const onSubmit = (data) => {
     const doc = generateGeneralforsamlingsprotokoll(data);
 
@@ -22,24 +29,21 @@ export function GeneralforsamlingForm() {
     });
   };
 
-  const data = getValues();
+  const data = watch();
 
-  const styreleder = useWatch({
-    control,
-    name: "styreleder",
-  });
+  const styreleder = watch("styreleder");
 
   useEffect(() => {
-    if (!formState.touchedFields.moteleder) {
+    if (!touchedFields.moteleder) {
       setValue("moteleder", styreleder);
     }
-    if (!formState.touchedFields.protokollforer) {
+    if (!touchedFields.protokollforer) {
       setValue("protokollforer", styreleder);
     }
-    if (!formState.touchedFields.ny_styreleder) {
+    if (!touchedFields.ny_styreleder) {
       setValue("ny_styreleder", styreleder);
     }
-  }, [styreleder, formState, setValue]);
+  }, [styreleder, touchedFields, setValue]);
 
   return (
     <form className=" w-full max-w-m" onSubmit={handleSubmit(onSubmit)}>
