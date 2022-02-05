@@ -18,8 +18,8 @@ export default function Home() {
       </Head>
 
       <main className={styles.main}>
-        <h1 className={styles.title}>Generalforsamlingsprotokollgenerator</h1>
-
+        <h1 className={styles.title}>protokoll</h1>
+        <h2>Generalforsamlingsprotokollgenerator</h2>
         <p className={styles.description}>
           Fyll ut informasjon om din generalforsamling, og få ut en docx med
           protokoll. Ingen informasjon lagres på noen server, alt skjer i
