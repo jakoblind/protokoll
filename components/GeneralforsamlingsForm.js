@@ -5,13 +5,13 @@ import { useForm, useWatch } from "react-hook-form";
 import { Packer } from "docx";
 import { saveAs } from "file-saver";
 import { generateGeneralforsamlingsprotokoll } from "../utils/docx-generator";
+import { getStructuredData } from "../utils/data-transformer";
 
 export function GeneralforsamlingForm() {
-  const { register, handleSubmit, formState, setValue, control } = useForm();
+  const { register, handleSubmit, formState, setValue, control, getValues } =
+    useForm();
   const { errors } = formState;
   const onSubmit = (data) => {
-    console.log("submit", data);
-
     const doc = generateGeneralforsamlingsprotokoll(data);
 
     Packer.toBlob(doc).then((blob) => {
@@ -21,6 +21,8 @@ export function GeneralforsamlingForm() {
       );
     });
   };
+
+  const data = getValues();
 
   const styreleder = useWatch({
     control,
@@ -40,7 +42,7 @@ export function GeneralforsamlingForm() {
   }, [styreleder, formState, setValue]);
 
   return (
-    <form className="w-full max-w-m" onSubmit={handleSubmit(onSubmit)}>
+    <form className=" w-full max-w-m" onSubmit={handleSubmit(onSubmit)}>
       <Group header="Foretaksinformasjon">
         <TextField
           label="Foretaksnavn"
@@ -167,7 +169,9 @@ export function GeneralforsamlingForm() {
           errors={errors}
         />
       </Group>
-      <p>
+
+      <DocumentPreview data={data} />
+      <p style={{ margin: "50px 0px 30px 0px" }}>
         <i>
           Dokumentet er et utkast som du kan gå gjennom. Jeg tar ikke noe ansvar
           for eventuelle feil og mangler i dokumentet.
@@ -183,6 +187,28 @@ export function GeneralforsamlingForm() {
         </button>
       </div>
     </form>
+  );
+}
+
+function DocumentPreview({ data }) {
+  return (
+    <div className="mb-6 space-y-5 border-solid rounded-xl p-10 shadow-black-500 shadow-2xl">
+      <div className="font-medium leading-tight text-4xl mt-0 mb-2 text-black-600">
+        Protokoll fra generalforsamling
+      </div>
+      {getStructuredData(data).map((item) => {
+        return (
+          <div key={item.heading} className="space-y-3">
+            <div className="font-medium leading-tight text-2xl mt-0 mb-2 text-blue-600">
+              {item.heading}
+            </div>
+            {item.description.map((desc) => (
+              <p key={desc}>{desc}</p>
+            ))}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
