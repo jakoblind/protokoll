@@ -8,15 +8,7 @@ import { generateGeneralforsamlingsprotokoll } from "../utils/docx-generator";
 import { getStructuredData } from "../utils/data-transformer";
 
 export function GeneralforsamlingForm() {
-  const {
-    register,
-    handleSubmit,
-    formState,
-    setValue,
-    control,
-    getValues,
-    watch,
-  } = useForm();
+  const { register, handleSubmit, formState, setValue, watch } = useForm();
   const { errors, touchedFields } = formState;
   const onSubmit = (data) => {
     const doc = generateGeneralforsamlingsprotokoll(data);
@@ -83,14 +75,6 @@ export function GeneralforsamlingForm() {
           defaultValue={getTodaysDate()}
           errors={errors}
         />
-
-        {/*<RadioJaNei
-              register={register}
-              name="godkjent_inkalling"
-              label="Inkalling og dagsorden godkjent"
-              defaultValue="ja"
-              errors={errors}
-            />*/}
         <TextField
           register={register}
           required={true}
@@ -373,7 +357,7 @@ function NInputs({
     return (
       <>
         {[...Array(nInputs).keys()].map((n) => (
-          <>
+          <div key={`${inputTextLabel}-${n}`}>
             <TextField
               register={register}
               required={false}
@@ -381,7 +365,6 @@ function NInputs({
               name={`${inputTextName}${n + 1}`}
               errors={errors}
               autoFocus={true}
-              key={`${inputTextLabel}-${n}`}
             />
             {inputText2Label && inputText2Name ? (
               <TextField
@@ -394,7 +377,7 @@ function NInputs({
                 asTextArea={true}
               />
             ) : null}
-          </>
+          </div>
         ))}
         <AddInputButton />
       </>
