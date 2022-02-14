@@ -336,51 +336,45 @@ function NInputs({
 }) {
   const [nInputs, addInput] = useState(0);
 
-  const AddInputButton = () => (
-    <div>
-      <button
-        type="button"
-        className="text-blue-600 mb-6"
-        onClick={(e) => {
-          e.preventDefault();
-
-          addInput(nInputs + 1);
-        }}
-      >
-        {addText}
-      </button>
-    </div>
-  );
-  if (nInputs === 0) {
-    return <AddInputButton />;
-  } else {
-    return (
-      <>
-        {[...Array(nInputs).keys()].map((n) => (
-          <div key={`${inputTextLabel}-${n}`}>
+  return (
+    <>
+      {[...Array(nInputs).keys()].map((n) => (
+        <div key={`${inputTextLabel}-${n}`}>
+          <TextField
+            register={register}
+            required={false}
+            label={`${inputTextLabel} ${n + 1}`}
+            name={`${inputTextName}${n + 1}`}
+            errors={errors}
+            autoFocus={true}
+          />
+          {inputText2Label && inputText2Name ? (
             <TextField
               register={register}
               required={false}
-              label={`${inputTextLabel} ${n + 1}`}
-              name={`${inputTextName}${n + 1}`}
+              label={`${inputText2Label} ${n + 1}`}
+              name={`${inputText2Name}${n + 1}`}
               errors={errors}
-              autoFocus={true}
+              key={`${inputText2Label}-${n}`}
+              asTextArea={true}
             />
-            {inputText2Label && inputText2Name ? (
-              <TextField
-                register={register}
-                required={false}
-                label={`${inputText2Label} ${n + 1}`}
-                name={`${inputText2Name}${n + 1}`}
-                errors={errors}
-                key={`${inputText2Label}-${n}`}
-                asTextArea={true}
-              />
-            ) : null}
-          </div>
-        ))}
-        <AddInputButton />
-      </>
-    );
-  }
+          ) : null}
+        </div>
+      ))}
+      <div>
+        <button
+          type="button"
+          className="text-blue-600 mb-6"
+          onClick={(e) => {
+            e.preventDefault();
+
+            addInput(nInputs + 1);
+          }}
+        >
+          {addText}
+        </button>
+      </div>
+    </>
+  );
+  f;
 }
