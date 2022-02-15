@@ -1,23 +1,24 @@
 import React, { useState, useEffect } from "react";
 
 import { useForm, useWatch } from "react-hook-form";
-
+import Autosuggest from "react-autosuggest";
 import { Packer } from "docx";
 import { saveAs } from "file-saver";
 import { generateGeneralforsamlingsprotokoll } from "../utils/docx-generator";
 import { getStructuredData } from "../utils/data-transformer";
+import theme from "./autosuggestTheme.module.css";
 
 export function GeneralforsamlingForm() {
   const { register, handleSubmit, formState, setValue, watch } = useForm();
+  const [org, setOrg] = useState();
+  const [styreLederBrreg, setStyreLederBrreg] = useState();
+
   const { errors, touchedFields } = formState;
   const onSubmit = (data) => {
-    const doc = generateGeneralforsamlingsprotokoll(data);
+    const doc = generateGeneralforsamlingsprotokoll(data, org, styreLederBrreg);
 
     Packer.toBlob(doc).then((blob) => {
-      saveAs(
-        blob,
-        `Generalforsamlingsprotokoll-${data.foretaksnavn}-${data.ar}.docx`
-      );
+      saveAs(blob, `Generalforsamlingsprotokoll-${org.navn}-${data.ar}.docx`);
     });
   };
 
@@ -37,25 +38,37 @@ export function GeneralforsamlingForm() {
     }
   }, [styreleder, touchedFields, setValue]);
 
+  // only for validation
+  register("orgname", { required: true });
+
   return (
     <form className=" w-full max-w-m" onSubmit={handleSubmit(onSubmit)}>
       <Group header="Foretaksinformasjon">
-        <TextField
-          label="Foretaksnavn"
-          name="foretaksnavn"
-          register={register}
-          required={true}
-          errors={errors}
-          autoFocus={true}
+        <Field
+          error={errors ? errors["orgname"] : null}
+          name="org"
+          field={
+            <OrgFinder
+              setOrg={(v) => {
+                setOrg(v);
+                setValue("orgname", v.navn, { shouldValidate: true });
+              }}
+              setStyreLeder={setStyreLederBrreg}
+              org={org}
+              styreLeder={styreLederBrreg}
+            />
+          }
         />
 
-        <TextField
-          register={register}
-          required={true}
-          errors={errors}
-          label="Styreleder"
-          name="styreleder"
-        />
+        {!styreLederBrreg ? (
+          <TextField
+            register={register}
+            required={true}
+            errors={errors}
+            label="Styreleder"
+            name="styreleder"
+          />
+        ) : null}
 
         <RadioJaNei
           register={register}
@@ -158,7 +171,11 @@ export function GeneralforsamlingForm() {
         />
       </Group>
 
-      <DocumentPreview data={data} />
+      <DocumentPreview
+        data={data}
+        org={org}
+        styreLederBrreg={styreLederBrreg}
+      />
       <p style={{ margin: "50px 0px 30px 0px" }}>
         <i>
           Dokumentet er et utkast som du kan gå gjennom. Jeg tar ikke noe ansvar
@@ -178,13 +195,13 @@ export function GeneralforsamlingForm() {
   );
 }
 
-function DocumentPreview({ data }) {
+function DocumentPreview({ data, org, styreLederBrreg }) {
   return (
     <div className="mb-6 space-y-5 border-solid rounded-xl p-10 shadow-black-500 shadow-2xl">
       <div className="font-medium leading-tight text-4xl mt-0 mb-2 text-black-600">
         Protokoll fra generalforsamling
       </div>
-      {getStructuredData(data).map((item) => {
+      {getStructuredData(data, org, styreLederBrreg).map((item) => {
         return (
           <div key={item.heading} className="space-y-3">
             <div className="font-medium leading-tight text-2xl mt-0 mb-2 text-blue-600">
@@ -257,6 +274,19 @@ function TextField({
     />
   );
   return (
+    <Field
+      label={label}
+      id={id}
+      name={name}
+      required={required}
+      error={error}
+      field={asTextArea ? textArea : inputField}
+    />
+  );
+}
+
+function Field({ id, name, label, required, error, field }) {
+  return (
     <>
       <div className=" mb-6">
         <label
@@ -268,7 +298,7 @@ function TextField({
         </label>
         <div className="md:flex">
           <div className="md:w-1/2">
-            {asTextArea ? textArea : inputField}
+            {field}
             {error && (
               <p className="text-red-500 text-s italic">Obligatoriskt felt</p>
             )}
@@ -376,5 +406,128 @@ function NInputs({
       </div>
     </>
   );
-  f;
+}
+
+const getSuggestionValue = (suggestion) => suggestion.navn;
+
+const renderSuggestion = (suggestion) => <div>{suggestion.navn}</div>;
+
+class OrgFinder extends React.Component {
+  constructor() {
+    super();
+
+    this.state = {
+      value: "",
+      suggestions: [],
+    };
+  }
+
+  onChange = (event, { newValue }) => {
+    const valueNoWhitespace = newValue?.replaceAll(" ", "");
+    if (valueNoWhitespace.length === 9) {
+      fetch(
+        `https://data.brreg.no/enhetsregisteret/api/enheter/${valueNoWhitespace}`
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          if (data) {
+            this.props.setOrg(data);
+            this.getRoles(data.organisasjonsnummer);
+          }
+        });
+      return;
+    }
+    this.setState({
+      value: newValue,
+    });
+  };
+
+  getRoles = (organisasjonsnummer) => {
+    fetch(
+      `https://data.brreg.no/enhetsregisteret/api/enheter/${organisasjonsnummer}/roller`
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        if (data?.rollegrupper) {
+          const styre = data.rollegrupper.find(
+            (roll) => roll.type.kode === "STYR"
+          );
+          if (styre?.roller.length > 0) {
+            const styreleder = styre.roller.find(
+              (roll) => roll.type.kode === "LEDE"
+            );
+            if (styreleder?.person?.navn) {
+              this.props.setStyreLeder(
+                `${styreleder?.person?.navn?.fornavn} ${styreleder?.person?.navn?.etternavn}`
+              );
+            }
+          }
+        }
+      });
+  };
+
+  onSuggestionsFetchRequested = ({ value }) => {
+    fetch(
+      `https://data.brreg.no/enhetsregisteret/api/enheter?navn=${value}&konkurs=false`
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        if (data?._embedded?.enheter) {
+          this.setState({ suggestions: data._embedded.enheter });
+        }
+      });
+  };
+  onSuggestionsClearRequested = () => {
+    this.setState({
+      suggestions: [],
+    });
+  };
+
+  render() {
+    const { value, suggestions } = this.state;
+
+    const { org, styreLeder } = this.props;
+
+    const inputProps = {
+      value,
+      onChange: this.onChange,
+      placeholder: "Foretaksnavn eller org nr",
+    };
+
+    if (org) {
+      return (
+        <div>
+          <div>Foretaksnavn: {org.navn}</div>
+          {styreLeder ? <div>Styreleder: {styreLeder}</div> : null}(
+          <button
+            className="text-blue-600 mb-6"
+            onClick={() => {
+              this.setState({ value: "" });
+              this.props.setOrg(null);
+              this.props.setStyreLeder(null);
+            }}
+          >
+            endre
+          </button>
+          )
+        </div>
+      );
+    }
+
+    return (
+      <Autosuggest
+        theme={theme}
+        suggestions={suggestions}
+        onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
+        onSuggestionsClearRequested={this.onSuggestionsClearRequested}
+        onSuggestionSelected={(event, { suggestion, suggestionValue }) => {
+          this.props.setOrg(suggestion);
+          this.getRoles(suggestion.organisasjonsnummer);
+        }}
+        getSuggestionValue={getSuggestionValue}
+        renderSuggestion={renderSuggestion}
+        inputProps={inputProps}
+      />
+    );
+  }
 }

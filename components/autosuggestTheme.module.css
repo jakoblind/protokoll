@@ -1,0 +1,25 @@
+.input {
+  border: 2px solid;
+  border-color: rgb(151 157 172);
+  border-radius: 0.25rem;
+  width: 100%;
+}
+.input:focus {
+  border-color: rgb(3 83 164);
+}
+
+.suggestionsContainerOpen {
+  border: 2px solid;
+  border-color: rgb(3 83 164);
+  border-radius: 0.25rem;
+}
+
+.suggestion {
+  cursor: pointer;
+  padding: 10px;
+}
+
+.suggestionHighlighted {
+  background-color: rgb(3 83 164);
+  color: white;
+}

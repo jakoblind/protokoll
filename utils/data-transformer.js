@@ -1,9 +1,11 @@
-export function getStructuredData(data) {
+export function getStructuredData(data, org, styreLederBrreg) {
   const punkter = [
     {
       heading: `Åpning av møtet og oversikt over aksjeeiere som deltok`,
       description: [
-        `Generalforsamlingen ble åpnet av styreleder ${data.styreleder} som opprettet oversikt over hvem som deltok, enten selv eller ved fullmektig. `,
+        `Generalforsamlingen ble åpnet av styreleder ${
+          styreLederBrreg || data.styreleder
+        } som opprettet oversikt over hvem som deltok, enten selv eller ved fullmektig. `,
         `Til stede var: ${getTilstedeList(data)}`,
       ],
     },
@@ -61,9 +63,9 @@ export function getStructuredData(data) {
   ];
   return [
     {
-      heading: data.foretaksnavn,
+      heading: org?.navn,
       description: [
-        `Den ${data.dato} ble det holdt generalforsamling i ${data.foretaksnavn}`,
+        `Den ${data.dato} ble det holdt generalforsamling i ${org?.navn}`,
       ],
     },
     ...punkter.reduce(

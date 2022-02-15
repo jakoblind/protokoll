@@ -2,8 +2,12 @@ import { Document, Paragraph, TextRun, HeadingLevel } from "docx";
 
 import { getStructuredData } from "./data-transformer";
 
-export function generateGeneralforsamlingsprotokoll(data) {
-  const structuredData = getStructuredData(data);
+export function generateGeneralforsamlingsprotokoll(
+  data,
+  org,
+  styreLederBrreg
+) {
+  const structuredData = getStructuredData(data, org, styreLederBrreg);
 
   const doc = new Document({
     sections: [
