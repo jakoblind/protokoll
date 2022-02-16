@@ -51,7 +51,7 @@ export function GeneralforsamlingForm() {
             <OrgFinder
               setOrg={(v) => {
                 setOrg(v);
-                setValue("orgname", v.navn, { shouldValidate: true });
+                setValue("orgname", v?.navn, { shouldValidate: true });
               }}
               setStyreLeder={setStyreLederBrreg}
               org={org}
@@ -137,13 +137,14 @@ export function GeneralforsamlingForm() {
           errors={errors}
         />
 
-        <TextField
+        <OptionalInput
+          addText="Legg til ny styreleder"
           register={register}
-          required={false}
-          label="Ny styreleder"
-          name="ny_styreleder"
           errors={errors}
+          inputTextLabel="Ny styreleder"
+          inputTextName="ny_styreleder"
         />
+
         <NInputs
           addText="Legg til nytt styremedlem"
           register={register}
@@ -351,6 +352,45 @@ function Group({ children, header }) {
       <hr className="pb-3" />
       {children}
       <div className="pb-10"></div>
+    </>
+  );
+}
+
+function OptionalInput({
+  addText,
+  register,
+  errors,
+  inputTextLabel,
+  inputTextName,
+}) {
+  const [show, setShow] = useState(false);
+  return (
+    <>
+      {show ? (
+        <div key={`${inputTextLabel}`}>
+          <TextField
+            register={register}
+            required={false}
+            label={`${inputTextLabel}`}
+            name={`${inputTextName}`}
+            errors={errors}
+            autoFocus={true}
+          />
+        </div>
+      ) : (
+        <div>
+          <button
+            type="button"
+            className="text-blue-600 mb-6"
+            onClick={(e) => {
+              e.preventDefault();
+              setShow(true);
+            }}
+          >
+            {addText}
+          </button>
+        </div>
+      )}
     </>
   );
 }

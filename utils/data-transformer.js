@@ -1,4 +1,5 @@
 export function getStructuredData(data, org, styreLederBrreg) {
+  const newStyremedlemer = getStyremedlemer(data);
   const punkter = [
     {
       heading: `Åpning av møtet og oversikt over aksjeeiere som deltok`,
@@ -47,12 +48,16 @@ export function getStructuredData(data, org, styreLederBrreg) {
       : []),
     {
       heading: `Styrevalg`,
-      description: [
-        `Styreleder/valgkomiteens leder (dersom selskapet har valgkomite) redegjorde for at det ikke er framkommet forslag til endringer i styrets sammensetning. Forslaget om et uforandret styre ble enstemmig vedtatt.`,
-        `Styret består etter valget av:`,
-        `Styreleder: ${data.ny_styreleder}`,
-        ...getStyremedlemer(data).map((name) => `Styremedlemer: ${name}`),
-      ],
+      description:
+        data.ny_styreleder || newStyremedlemer.length > 0
+          ? [
+              `Styret består etter valget av:`,
+              `Styreleder: ${data.ny_styreleder || styreLederBrreg || ""}`,
+              ...newStyremedlemer.map((name) => `Styremedlemer: ${name}`),
+            ]
+          : [
+              `Styreleder redegjorde for at det ikke er framkommet forslag til endringer i styrets sammensetning. Forslaget om et uforandret styre ble enstemmig vedtatt.`,
+            ],
     },
     ...getExtraPunkter(data).flatMap((a, i) => [
       {
